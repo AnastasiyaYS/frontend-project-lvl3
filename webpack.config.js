@@ -19,6 +19,7 @@ module.exports = {
             options: {
               plugins: function () {  // eslint-disable-line
                 return [
+                  require('precss'), // eslint-disable-line
                   require('autoprefixer'),  // eslint-disable-line
                 ];
               },
