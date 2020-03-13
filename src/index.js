@@ -1,1 +1,3 @@
-import './scss/index.scss';
+import init from './init';
+
+init();
