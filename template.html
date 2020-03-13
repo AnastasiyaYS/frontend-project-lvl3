@@ -1,7 +1,8 @@
 <!doctype html>
 <html>
   <head>
-    <title>News aggregator</title>
+    <meta charset="utf-8">
+    <title></title>
   </head>
   <body>
     <div class="container">
@@ -9,11 +10,11 @@
         <form data-form="add-feed" method="post">
           <div class="row">
             <div class="col-sm-9 col-md-9 col-lg-8 offset-lg-1">
-              <input id="link" type="text" class="form-control" placeholder="Ссылка на RSS-поток" required>
+              <input id="link" type="text" class="form-control" required>
               <div class="invalid-feedback"></div>
             </div>
             <div class="col-sm-3 col-md-3 col-lg-2">
-              <input type="submit" value="Добавить" class="btn btn-primary btn-block" disabled="">
+              <input type="submit" class="btn btn-primary btn-block" disabled="">
             </div>
           </div>
         </form>
@@ -23,11 +24,11 @@
       </div>
       <div class="row">
         <div class="col-4">
-          <h4 class="text-center">Интернет-ресурсы</h4><hr>
+          <h4 id="feedListTitle" class="text-center"></h4><hr>
           <div data-container="feeds"></div>
         </div>
         <div class="col-8">
-          <h4 class="text-center">Новости</h4><hr>
+          <h4 id="newsListTitle" class="text-center"></h4><hr>
           <ul data-container="news" class="list-group list-group-flush"></ul>
         </div>
       </div>

@@ -1,14 +1,21 @@
 import { watch } from 'melanke-watchjs';
 import _ from 'lodash';
+import i18next from 'i18next';
 
 export default (state) => {
   const inputElement = document.getElementById('link');
   const form = document.querySelector('[data-form="add-feed"]');
   const submitButton = form.querySelector('input[type="submit"]');
 
+  inputElement.placeholder = i18next.t('form.placeholder');
+  submitButton.value = i18next.t('form.button');
+  document.querySelector('title').textContent = i18next.t('title');
+  document.getElementById('feedListTitle').textContent = i18next.t('output.feedListTitle');
+  document.getElementById('newsListTitle').textContent = i18next.t('output.newsListTitle');
+
   watch(state.form, 'processState', () => {
     const { processState } = state.form;
-    const spinnerEl = document.querySelector('#spinner');
+    const spinnerEl = document.getElementById('spinner');
     switch (processState) {
       case 'filling':
         submitButton.disabled = false;
@@ -18,7 +25,6 @@ export default (state) => {
       case 'processing':
         submitButton.disabled = true;
         inputElement.disabled = true;
-        spinnerEl.removeAttribute('style');
         spinnerEl.setAttribute('style', 'margin-top: 15px;');
         break;
       default:

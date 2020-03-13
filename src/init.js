@@ -2,14 +2,14 @@ import './scss/index.scss';
 import _ from 'lodash';
 import { string } from 'yup';
 import axios from 'axios';
+import i18next from 'i18next';
 import render from './view';
 
-const errorMessages = {
-  repeated: 'Адрес уже существует',
-  valid: 'Недопустимый адрес',
-};
-
 const validate = (state) => {
+  const errorMessages = {
+    repeated: i18next.t('form.errors.repeated'),
+    valid: i18next.t('form.errors.valid'),
+  };
   const errors = {};
   const { link } = state.form;
   const { feedList } = state.output;
@@ -58,15 +58,15 @@ const parseXML = (xml) => {
 export default () => {
   const state = {
     form: {
-      processState: 'filling', // /'processing'
+      processState: 'filling',
       link: '',
       valid: false,
-      errors: {}, // link: errorMessages.repeated/valid
+      errors: {},
     },
     output: {
       activeFeedId: null,
-      feedList: [], // { id, feedLink, feedTitle, feedDescription }
-      newsList: [], // { feedId, newsLink, newsTitle }
+      feedList: [],
+      newsList: [],
     },
   };
 
@@ -85,10 +85,6 @@ export default () => {
     axios.get(`https://cors-anywhere.herokuapp.com/${link}`)
       .then((rss) => {
         const data = parseXML(rss);
-        // data = {
-        //  feed: { feedTitle: ..., feedDescription: ... },
-        //  news: [ { newsTitle: ..., newsLink: ... }, {}, {} ]
-        // }
         data.feed.feedLink = link;
         const feedId = _.uniqueId();
         data.feed.feedId = feedId;
