@@ -9,9 +9,12 @@ export default (state) => {
 
   inputElement.placeholder = i18next.t('form.placeholder');
   submitButton.value = i18next.t('form.button');
-  document.querySelector('title').textContent = i18next.t('title');
-  document.getElementById('feedListTitle').textContent = i18next.t('output.feedListTitle');
-  document.getElementById('newsListTitle').textContent = i18next.t('output.newsListTitle');
+  const titleEl = document.querySelector('title');
+  titleEl.textContent = i18next.t('title');
+  const feedListTitleEl = document.getElementById('feedListTitle');
+  feedListTitleEl.textContent = i18next.t('output.feedListTitle');
+  const newsListTitleEl = document.getElementById('newsListTitle');
+  newsListTitleEl.textContent = i18next.t('output.newsListTitle');
 
   watch(state.form, 'processState', () => {
     const { processState } = state.form;
@@ -30,6 +33,7 @@ export default (state) => {
       default:
         throw new Error(`Unknown state: ${processState}`);
     }
+    form.reset();
   });
 
   watch(state.form, 'valid', () => {
@@ -93,7 +97,5 @@ export default (state) => {
       aEl.textContent = newsObj.newsTitle;
       liEl.append(aEl);
     });
-
-    form.reset();
   });
 };

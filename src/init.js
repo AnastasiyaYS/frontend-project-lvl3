@@ -55,6 +55,47 @@ const parseXML = (xml) => {
   return result;
 };
 
+const getRSS = (link, state) => {
+  axios.get(`https://cors-anywhere.herokuapp.com/${link}`)
+    .then((rss) => {
+      const data = parseXML(rss);
+      data.feed.feedLink = link;
+      const feedId = _.uniqueId();
+      data.feed.feedId = feedId;
+
+      data.news.forEach((newsObj) => {
+        const newsId = _.uniqueId();
+        newsObj.newsId = newsId; // eslint-disable-line
+        newsObj.feedId = feedId; // eslint-disable-line
+        state.output.newsList.push(newsObj);
+      });
+
+      state.output.activeFeedId = feedId; // eslint-disable-line
+      state.output.feedList.push(data.feed);
+      state.form.processState = 'filling'; // eslint-disable-line
+    });
+};
+
+const updateNews = (state) => {
+  state.output.feedList.forEach((feedObj) => {
+    axios.get(`https://cors-anywhere.herokuapp.com/${feedObj.feedLink}`)
+      .then((rss) => {
+        const data = parseXML(rss);
+        const newNews = _.differenceBy(data.news, state.output.newsList, 'newsLink');
+        newNews.forEach((newsObj) => {
+          const newsId = _.uniqueId();
+          newsObj.newsId = newsId; // eslint-disable-line
+          newsObj.feedId = feedObj.feedId; // eslint-disable-line
+          state.output.newsList.unshift(newsObj);
+        });
+        const { activeFeedId } = state.output; // костыль для вызова перерисовки ^-^
+        state.output.activeFeedId = 0; // eslint-disable-line
+        state.output.activeFeedId = activeFeedId; // eslint-disable-line
+      });
+  });
+  setTimeout(() => updateNews(state), 5000);
+};
+
 export default () => {
   const state = {
     form: {
@@ -82,23 +123,9 @@ export default () => {
     e.preventDefault();
     state.form.processState = 'processing';
     const { link } = state.form;
-    axios.get(`https://cors-anywhere.herokuapp.com/${link}`)
-      .then((rss) => {
-        const data = parseXML(rss);
-        data.feed.feedLink = link;
-        const feedId = _.uniqueId();
-        data.feed.feedId = feedId;
-        data.news.forEach((newsObj) => {
-          const newsId = _.uniqueId();
-          newsObj.newsId = newsId; // eslint-disable-line
-          newsObj.feedId = feedId; // eslint-disable-line
-          state.output.newsList.push(newsObj);
-        });
-        state.output.activeFeedId = feedId;
-        state.output.feedList.push(data.feed);
-        state.form.processState = 'filling';
-      });
+    getRSS(link, state);
   });
 
   render(state);
+  updateNews(state);
 };
