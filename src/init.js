@@ -56,7 +56,7 @@ const parseXML = (xml) => {
   return result;
 };
 
-const getProxyPath = link => (`https://cors-anywhere.herokuapp.com/${link}`);
+const getProxyPath = (link) => (`https://cors-anywhere.herokuapp.com/${link}`); // eslint-disable-line
 
 const addRSS = (link, state) => {
   const proxyPath = getProxyPath(link);
