@@ -11,10 +11,10 @@ export default (state) => {
   submitButton.value = i18next.t('form.button');
   const titleEl = document.querySelector('title');
   titleEl.textContent = i18next.t('title');
-  const feedListTitleEl = document.getElementById('feedListTitle');
-  feedListTitleEl.textContent = i18next.t('output.feedListTitle');
-  const newsListTitleEl = document.getElementById('newsListTitle');
-  newsListTitleEl.textContent = i18next.t('output.newsListTitle');
+  const feedsTitleEl = document.getElementById('feedsTitle');
+  feedsTitleEl.textContent = i18next.t('output.feedsTitle');
+  const postsTitleEl = document.getElementById('postsTitle');
+  postsTitleEl.textContent = i18next.t('output.postsTitle');
 
   watch(state.form, 'processState', () => {
     const { processState } = state.form;
@@ -23,12 +23,12 @@ export default (state) => {
       case 'filling':
         submitButton.disabled = false;
         inputElement.disabled = false;
-        spinnerEl.setAttribute('style', 'margin-top: 15px; visibility: hidden');
+        spinnerEl.classList.add('invisible');
         break;
       case 'processing':
         submitButton.disabled = true;
         inputElement.disabled = true;
-        spinnerEl.setAttribute('style', 'margin-top: 15px;');
+        spinnerEl.classList.remove('invisible');
         break;
       default:
         throw new Error(`Unknown state: ${processState}`);
@@ -53,16 +53,16 @@ export default (state) => {
 
   watch(state.output, 'activeFeedId', () => {
     const { activeFeedId } = state.output;
-    const { feedList } = state.output;
-    const { newsList } = state.output;
-    const feedsContainer = document.querySelector('[data-container="feeds"]');
-    const newsContainer = document.querySelector('[data-container="news"]');
-    feedsContainer.innerHTML = '';
-    newsContainer.innerHTML = '';
+    const { feeds } = state.output;
+    const { posts } = state.output;
+    const containerForFeeds = document.querySelector('[data-container="feeds"]');
+    const containerForPosts = document.querySelector('[data-container="posts"]');
+    containerForFeeds.innerHTML = '';
+    containerForPosts.innerHTML = '';
 
-    feedList.forEach((feedObj) => {
+    feeds.forEach((feedObj) => {
       const cardEl = document.createElement('div');
-      feedsContainer.append(cardEl);
+      containerForFeeds.append(cardEl);
       cardEl.setAttribute('style', 'max-width: 25rem;');
       const cardHeaderEl = document.createElement('div');
       cardHeaderEl.classList.add('card-header');
@@ -87,14 +87,14 @@ export default (state) => {
       }
     });
 
-    const newsListFiltered = _.filter(newsList, { feedId: activeFeedId });
-    newsListFiltered.forEach((newsObj) => {
+    const filteredPosts = _.filter(posts, { feedId: activeFeedId });
+    filteredPosts.forEach((postObj) => {
       const liEl = document.createElement('li');
       liEl.classList.add('list-group-item');
-      newsContainer.append(liEl);
+      containerForPosts.append(liEl);
       const aEl = document.createElement('a');
-      aEl.setAttribute('href', newsObj.newsLink);
-      aEl.textContent = newsObj.newsTitle;
+      aEl.setAttribute('href', postObj.postLink);
+      aEl.textContent = postObj.postTitle;
       liEl.append(aEl);
     });
   });

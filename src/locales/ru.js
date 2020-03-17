@@ -10,8 +10,8 @@ export default {
       },
     },
     output: {
-      feedListTitle: 'Интернет-ресурсы',
-      newsListTitle: 'Новости',
+      feedsTitle: 'Интернет-ресурсы',
+      postsTitle: 'Статьи',
     },
   },
 };

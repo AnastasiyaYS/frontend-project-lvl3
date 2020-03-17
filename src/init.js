@@ -1,19 +1,18 @@
+/* eslint no-param-reassign: "error" */
 import './scss/index.scss';
 import _ from 'lodash';
 import { string } from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
-import render from './view';
+import view from './view';
 
-const validate = (state) => {
+const validate = (link, feeds) => {
   const errorMessages = {
     repeated: i18next.t('form.errors.repeated'),
     valid: i18next.t('form.errors.valid'),
   };
   const errors = {};
-  const { link } = state.form;
-  const { feedList } = state.output;
-  if (_.find(feedList, { feedLink: link })) {
+  if (_.find(feeds, { feedLink: link })) {
     errors.link = errorMessages.repeated;
     const promise = Promise.resolve();
     return promise.then(() => errors);
@@ -30,70 +29,76 @@ const validate = (state) => {
 };
 
 const updateValidationState = (state) => {
-  validate(state).then((errors) => {
-    state.form.errors = errors;  // eslint-disable-line
-    state.form.valid = _.isEqual(errors, {}); // eslint-disable-line
+  const { link } = state.form;
+  const { feeds } = state.output;
+  validate(link, feeds).then((errors) => {
+    state.form.errors = errors;
+    state.form.valid = _.isEqual(errors, {});
   });
 };
 
 const parseXML = (xml) => {
-  const result = { feed: {}, news: [] };
+  const result = { feed: {}, posts: [] };
   const domparser = new DOMParser();
-  const doc = domparser.parseFromString(xml.data, 'text/xml');
+  const doc = domparser.parseFromString(xml, 'text/xml');
   const channelEl = doc.querySelector('channel');
   const feedTitle = channelEl.querySelector('title').textContent;
   const feedDescription = channelEl.querySelector('description').textContent;
   result.feed = { feedTitle, feedDescription };
   const items = channelEl.getElementsByTagName('item');
   [...items].forEach((item) => {
-    const newsTitle = item.querySelector('title').textContent;
-    const newsLink = item.querySelector('link').textContent;
-    result.news.push({
-      newsTitle, newsLink,
+    const postTitle = item.querySelector('title').textContent;
+    const postLink = item.querySelector('link').textContent;
+    result.posts.push({
+      postTitle, postLink,
     });
   });
   return result;
 };
 
-const getRSS = (link, state) => {
-  axios.get(`https://cors-anywhere.herokuapp.com/${link}`)
+const getProxyPath = link => (`https://cors-anywhere.herokuapp.com/${link}`);
+
+const addRSS = (link, state) => {
+  const proxyPath = getProxyPath(link);
+  axios.get(proxyPath)
     .then((rss) => {
-      const data = parseXML(rss);
+      const data = parseXML(rss.data);
       data.feed.feedLink = link;
       const feedId = _.uniqueId();
       data.feed.feedId = feedId;
 
-      data.news.forEach((newsObj) => {
-        const newsId = _.uniqueId();
-        newsObj.newsId = newsId; // eslint-disable-line
-        newsObj.feedId = feedId; // eslint-disable-line
-        state.output.newsList.push(newsObj);
+      data.posts.forEach((postObj) => {
+        const postId = _.uniqueId();
+        postObj.postId = postId;
+        postObj.feedId = feedId;
+        state.output.posts.push(postObj);
       });
 
-      state.output.activeFeedId = feedId; // eslint-disable-line
-      state.output.feedList.push(data.feed);
-      state.form.processState = 'filling'; // eslint-disable-line
+      state.output.activeFeedId = feedId;
+      state.output.feeds.push(data.feed);
+      state.form.processState = 'filling';
     });
 };
 
-const updateNews = (state) => {
-  state.output.feedList.forEach((feedObj) => {
-    axios.get(`https://cors-anywhere.herokuapp.com/${feedObj.feedLink}`)
+const getNewPosts = (state) => {
+  state.output.feeds.forEach((feedObj) => {
+    const proxyPath = getProxyPath(feedObj.feedLink);
+    axios.get(proxyPath)
       .then((rss) => {
-        const data = parseXML(rss);
-        const newNews = _.differenceBy(data.news, state.output.newsList, 'newsLink');
-        newNews.forEach((newsObj) => {
-          const newsId = _.uniqueId();
-          newsObj.newsId = newsId; // eslint-disable-line
-          newsObj.feedId = feedObj.feedId; // eslint-disable-line
-          state.output.newsList.unshift(newsObj);
+        const data = parseXML(rss.data);
+        const newPosts = _.differenceBy(data.posts, state.output.posts, 'postLink');
+        newPosts.forEach((postObj) => {
+          const postId = _.uniqueId();
+          postObj.postId = postId;
+          postObj.feedId = feedObj.feedId;
+          state.output.posts.unshift(postObj);
         });
         const { activeFeedId } = state.output; // костыль для вызова перерисовки ^-^
-        state.output.activeFeedId = 0; // eslint-disable-line
-        state.output.activeFeedId = activeFeedId; // eslint-disable-line
+        state.output.activeFeedId = 0;
+        state.output.activeFeedId = activeFeedId;
       });
   });
-  setTimeout(() => updateNews(state), 5000);
+  setTimeout(() => getNewPosts(state), 5000);
 };
 
 export default () => {
@@ -106,8 +111,8 @@ export default () => {
     },
     output: {
       activeFeedId: null,
-      feedList: [],
-      newsList: [],
+      feeds: [],
+      posts: [],
     },
   };
 
@@ -123,9 +128,9 @@ export default () => {
     e.preventDefault();
     state.form.processState = 'processing';
     const { link } = state.form;
-    getRSS(link, state);
+    addRSS(link, state);
   });
 
-  render(state);
-  updateNews(state);
+  view(state);
+  getNewPosts(state);
 };
