@@ -9,9 +9,7 @@ export default {
         valid: 'Недопустимый адрес',
       },
     },
-    output: {
-      feedsTitle: 'Интернет-ресурсы',
-      postsTitle: 'Статьи',
-    },
+    feedsTitle: 'Интернет-ресурсы',
+    postsTitle: 'Статьи',
   },
 };

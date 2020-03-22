@@ -12,9 +12,9 @@ export default (state) => {
   const titleEl = document.querySelector('title');
   titleEl.textContent = i18next.t('title');
   const feedsTitleEl = document.getElementById('feedsTitle');
-  feedsTitleEl.textContent = i18next.t('output.feedsTitle');
+  feedsTitleEl.textContent = i18next.t('feedsTitle');
   const postsTitleEl = document.getElementById('postsTitle');
-  postsTitleEl.textContent = i18next.t('output.postsTitle');
+  postsTitleEl.textContent = i18next.t('postsTitle');
 
   watch(state.form, 'processState', () => {
     const { processState } = state.form;
@@ -51,10 +51,10 @@ export default (state) => {
     errorElement.textContent = state.form.errors.link;
   });
 
-  watch(state.output, 'activeFeedId', () => {
-    const { activeFeedId } = state.output;
-    const { feeds } = state.output;
-    const { posts } = state.output;
+  watch(state, 'activeFeedId', () => {
+    const { activeFeedId } = state;
+    const { feeds } = state;
+    const { posts } = state;
     const containerForFeeds = document.querySelector('[data-container="feeds"]');
     const containerForPosts = document.querySelector('[data-container="posts"]');
     containerForFeeds.innerHTML = '';
@@ -82,7 +82,7 @@ export default (state) => {
         cardEl.setAttribute('style', 'max-width: 25rem; cursor: pointer;');
         cardEl.addEventListener('click', (e) => {
           e.preventDefault();
-          state.output.activeFeedId = feedObj.feedId; // eslint-disable-line
+          state.activeFeedId = feedObj.feedId; // eslint-disable-line
         });
       }
     });

@@ -4,7 +4,7 @@ import _ from 'lodash';
 import { string } from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
-import view from './view';
+import updateView from './view';
 
 const validate = (link, feeds) => {
   const errorMessages = {
@@ -14,44 +14,36 @@ const validate = (link, feeds) => {
   const errors = {};
   if (_.find(feeds, { feedLink: link })) {
     errors.link = errorMessages.repeated;
-    const promise = Promise.resolve();
-    return promise.then(() => errors);
   }
   const schema = string().url();
-  return schema
-    .isValid(link)
-    .then((valid) => {
-      if (!valid) {
-        errors.link = errorMessages.valid;
-      }
-      return errors;
-    });
+  const valid = schema.isValidSync(link);
+  if (!valid) {
+    errors.link = errorMessages.valid;
+  }
+  return errors;
 };
 
 const updateValidationState = (state) => {
   const { link } = state.form;
-  const { feeds } = state.output;
-  validate(link, feeds).then((errors) => {
-    state.form.errors = errors;
-    state.form.valid = _.isEqual(errors, {});
-  });
+  const { feeds } = state;
+  const errors = validate(link, feeds);
+  state.form.errors = errors;
+  state.form.valid = _.isEqual(errors, {});
 };
 
-const parseXML = (xml) => {
+const parseXML = (rssXml) => {
   const result = { feed: {}, posts: [] };
   const domparser = new DOMParser();
-  const doc = domparser.parseFromString(xml, 'text/xml');
+  const doc = domparser.parseFromString(rssXml, 'text/xml');
   const channelEl = doc.querySelector('channel');
   const feedTitle = channelEl.querySelector('title').textContent;
   const feedDescription = channelEl.querySelector('description').textContent;
   result.feed = { feedTitle, feedDescription };
   const items = channelEl.getElementsByTagName('item');
-  [...items].forEach((item) => {
+  result.posts = [...items].map((item) => {
     const postTitle = item.querySelector('title').textContent;
     const postLink = item.querySelector('link').textContent;
-    result.posts.push({
-      postTitle, postLink,
-    });
+    return { postTitle, postLink };
   });
   return result;
 };
@@ -71,34 +63,34 @@ const addRSS = (link, state) => {
         const postId = _.uniqueId();
         postObj.postId = postId;
         postObj.feedId = feedId;
-        state.output.posts.push(postObj);
+        state.posts.push(postObj);
       });
 
-      state.output.activeFeedId = feedId;
-      state.output.feeds.push(data.feed);
+      state.activeFeedId = feedId;
+      state.feeds.push(data.feed);
       state.form.processState = 'filling';
     });
 };
 
-const getNewPosts = (state) => {
-  state.output.feeds.forEach((feedObj) => {
+const runAutoUpdate = (state) => {
+  state.feeds.forEach((feedObj) => {
     const proxyPath = getProxyPath(feedObj.feedLink);
     axios.get(proxyPath)
       .then((rss) => {
         const data = parseXML(rss.data);
-        const newPosts = _.differenceBy(data.posts, state.output.posts, 'postLink');
+        const newPosts = _.differenceBy(data.posts, state.posts, 'postLink');
         newPosts.forEach((postObj) => {
           const postId = _.uniqueId();
           postObj.postId = postId;
           postObj.feedId = feedObj.feedId;
-          state.output.posts.unshift(postObj);
+          state.posts.unshift(postObj);
         });
-        const { activeFeedId } = state.output; // костыль для вызова перерисовки ^-^
-        state.output.activeFeedId = 0;
-        state.output.activeFeedId = activeFeedId;
+        const { activeFeedId } = state; // костыль для вызова перерисовки ^-^
+        state.activeFeedId = 0;
+        state.activeFeedId = activeFeedId;
       });
   });
-  setTimeout(() => getNewPosts(state), 5000);
+  setTimeout(() => runAutoUpdate(state), 5000);
 };
 
 export default () => {
@@ -109,11 +101,9 @@ export default () => {
       valid: false,
       errors: {},
     },
-    output: {
-      activeFeedId: null,
-      feeds: [],
-      posts: [],
-    },
+    activeFeedId: null,
+    feeds: [],
+    posts: [],
   };
 
   const inputElement = document.getElementById('link');
@@ -131,6 +121,6 @@ export default () => {
     addRSS(link, state);
   });
 
-  view(state);
-  getNewPosts(state);
+  updateView(state);
+  runAutoUpdate(state);
 };
